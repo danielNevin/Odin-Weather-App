@@ -1,0 +1,43 @@
+body {
+  display: grid;
+  grid-template-rows: 1fr 3fr 2fr 5fr 1fr;
+}
+
+#header {
+  height: 100%;
+  width: 100%;
+}
+
+#weatherToday {
+  height: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+}
+
+#weatherNow {
+  height: 100%;
+  width: 100%;
+}
+
+#weather3Hour {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+#extraInfo {
+  height: 100%;
+  width: 100%;
+}
+
+#weatherWeek {
+  height: 100%;
+  width: 100%;
+}
+
+#footer {
+  height: 100%;
+  width: 100%;
+}
