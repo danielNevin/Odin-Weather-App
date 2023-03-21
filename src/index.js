@@ -1,10 +1,8 @@
+import { set, wrap } from "lodash";
 import { moment } from "moment-es6";
 import './style.css';
 
 let apiKey = 'eae1491e89f960425a0971c74103081f'
-
-let currentData;
-let threeHourData;
 
 function initializeBaseDivs() {
   let container = document.createElement('div');
@@ -36,6 +34,49 @@ function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+function parseWindDeg(degrees) {
+  let index = parseInt((degrees / 22.5) + .5);
+  let directionArray = ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return directionArray[(index % 16)];
+}
+
+async function userLocationWeatherData(position) {
+  const reponse = await fetch('https://api.openweathermap.org/data/3.0/onecall?lat=' + position.coords.latitude + '&lon=' + position.coords.longitude + '&appid=eae1491e89f960425a0971c74103081f', { mode: 'cors' });
+  const data = await reponse.json();
+  return data;
+}
+
+async function deafultValueWeatherData() {
+  alert('This service requires location data; Loading Default Values');
+  let City = 'London';
+  const response1 = await fetch('http://api.openweathermap.org/geo/1.0/direct?q=' + City + '&limit=5&appid=' + apiKey, { mode: 'cors' });
+  const geoData = await response1.json();
+  const response2 = await fetch('https://api.openweathermap.org/data/3.0/onecall?lat=' + geoData[0].lat + '&lon=' + geoData[0].lon + '&appid=eae1491e89f960425a0971c74103081f', { mode: 'cors' });
+  const data = await response2.json();
+  return data;
+}
+
+function weatherData() {
+  drawWeatherNow();
+  drawWeatherNext24Hours();
+  drawExtraInfo();
+  drawWeekWeather();
+  drawFooter();
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(async(position) => {
+      weatherData = await userLocationWeatherData(position);
+      console.log(weatherData);
+      injectData(weatherData);
+    },
+    async(err) => {
+      weatherData = await deafultValueWeatherData();
+      injectData(weatherData);
+    })
+  } else {
+    alert('Geolocation is not supported by your browser')
+  }
+}
+
 function drawWeatherNow() {
   let container = document.getElementById('weatherToday');
 
@@ -44,50 +85,26 @@ function drawWeatherNow() {
 
   let weatherNowLocationDiv = document.createElement('div');
   weatherNowLocationDiv.setAttribute('id', 'weatherNowLocation');
-  weatherNowLocationDiv.innerHTML = (currentData.name);
   wrapper.appendChild(weatherNowLocationDiv);
 
   let weatherNowPatternDiv = document.createElement('div');
   weatherNowPatternDiv.setAttribute('id', 'weatherNowPattern');
-  weatherNowPatternDiv.innerHTML = (currentData.weather[0].main);
   wrapper.appendChild(weatherNowPatternDiv);
+
+  let weatherNowPatternImg = document.createElement('img');
+  weatherNowPatternImg.setAttribute('id', 'weatherNowPatternImg');
+  wrapper.appendChild(weatherNowPatternImg);
 
   let weatherNowTempDiv = document.createElement('div');
   weatherNowTempDiv.setAttribute('id', 'weatherNowTemp');
-  weatherNowTempDiv.innerHTML = (Math.round(currentData.main.temp -273.15) + '&#176;C');
   wrapper.appendChild(weatherNowTempDiv);
 
   let weatherNowTempFeelsDiv = document.createElement('div');
   weatherNowTempFeelsDiv.setAttribute('id', 'weatherNowTempFeels');
-  weatherNowTempFeelsDiv.innerHTML = ('Feels like ' + Math.round(currentData.main.feels_like -273.15) + '&#176;C');
   wrapper.appendChild(weatherNowTempFeelsDiv);
 
-  let weatherNowHighDiv = document.createElement('div');
-  weatherNowHighDiv.setAttribute('id', 'weatherNowHigh');
-  weatherNowHighDiv.innerHTML = ('High: ' + Math.round(currentData.main.temp_max -273.15) + '&#176;C');
-  wrapper.appendChild(weatherNowHighDiv);
-
-  let weatherNowLowDiv = document.createElement('div');
-  weatherNowLowDiv.setAttribute('id', 'weatherNowLow');
-  weatherNowLowDiv.innerHTML = ('Low: ' + Math.round(currentData.main.temp_min -273.15) + '&#176;C');
-  wrapper.appendChild(weatherNowLowDiv);
-
   container.appendChild(wrapper);
-}
 
-async function currentWeather() {
-  const response = await fetch('https://api.openweathermap.org/data/2.5/weather?q=Auckland&appid=eae1491e89f960425a0971c74103081f', { mode: 'cors' });
-  const weatherData = await response.json();
-  currentData = weatherData;
-  drawWeatherNow();
-  drawExtraInfo();
-}
-
-async function threeHourWeather() {
-  const response = await fetch('https://api.openweathermap.org/data/2.5/forecast?q=Auckland&appid=eae1491e89f960425a0971c74103081f', { mode: 'cors' });
-  const weatherData = await response.json();
-  threeHourData = weatherData;
-  drawWeatherNext24Hours();
 }
 
 function drawWeatherNext24Hours() {
@@ -96,27 +113,33 @@ function drawWeatherNext24Hours() {
   let outerWrapper = document.createElement('div');
   outerWrapper.setAttribute('id', 'weather3Hour');
 
-  console.log(threeHourData)
-
-  for (let i = 1; i <6; i++) {
+  for (let i = 1; i <24; i++) {
     let wrapper = document.createElement('div');
     wrapper.setAttribute('id', 'weather3HourContainer-' + i);
-    wrapper.classList.add('3-hour-container')
+    wrapper.classList.add('three-hour-container')
 
-    let timeDiv = document.createElement('div');
-    timeDiv.setAttribute('id', 'timeDiv0')
-    timeDiv.classList.add('3-hour-container-time');
-    timeDiv.innerHTML = ('in ' + i*3 + ' Hours');
+    let timeDiv = document.createElement('span');
+    timeDiv.setAttribute('id', 'timeDiv-' + i);
+    timeDiv.classList.add('three-hour-container-time');
+    if (i === 1) {
+      timeDiv.innerHTML = ('in ' + i + ' Hour');
+    } else {
+      timeDiv.innerHTML = ('in ' + i + ' Hours');
+    }
     wrapper.appendChild(timeDiv);
 
-    let humidityDiv = document.createElement('div');
-    humidityDiv.classList.add('3-hour-container-humidity');
-    humidityDiv.innerHTML = (threeHourData.list[i].main.humidity + '%');
-    wrapper.appendChild(humidityDiv);
+    let chanceOfRainDiv = document.createElement('div');
+    chanceOfRainDiv.setAttribute('id', 'chanceOfRainDiv-' + i);
+    chanceOfRainDiv.classList.add('three-hour-container-rain');
+    wrapper.appendChild(chanceOfRainDiv);
+
+    let weatherIcon = document.createElement('img');
+    weatherIcon.setAttribute('id', 'iconDiv-' + i)
+    wrapper.appendChild(weatherIcon);
 
     let tempDiv = document.createElement('div');
-    tempDiv.classList.add('3-hour-container-temp');
-    tempDiv.innerHTML = (Math.round(threeHourData.list[i].main.temp -273.15) + '&#176;C');
+    tempDiv.setAttribute('id', 'tempDiv-' + i);
+    tempDiv.classList.add('three-hour-container-temp');
     wrapper.appendChild(tempDiv);
 
     outerWrapper.appendChild(wrapper)
@@ -127,42 +150,205 @@ function drawWeatherNext24Hours() {
 }
 
 function drawExtraInfo() {
-  let wrapper = document.getElementById('extraInfo');
+  let container = document.getElementById('extraInfo');
 
-  let container = document.createElement('div');
-  container.setAttribute('id', 'weatherExtraInfoContainer');
+  let wrapper = document.createElement('div');
+  wrapper.setAttribute('id', 'weatherExtraInfoWrapper');
+
+  let sunriseDivTitle = document.createElement('div');
+  sunriseDivTitle.classList.add('weather-extra-info-subcontainer-title');
+  sunriseDivTitle.innerHTML = 'SUNRISE';
+  wrapper.appendChild(sunriseDivTitle);
+
+  let sunsetDivTitle = document.createElement('div');
+  sunsetDivTitle.classList.add('weather-extra-info-subcontainer-title');
+  sunsetDivTitle.innerHTML = 'SUNSET';
+  wrapper.appendChild(sunsetDivTitle);
+
+  let humidityDivTitle = document.createElement('div');
+  humidityDivTitle.classList.add('weather-extra-info-subcontainer-title');
+  humidityDivTitle.innerHTML = 'HUMIDITY';
+  wrapper.appendChild(humidityDivTitle);
+
+  let chanceOfRainDivTitle = document.createElement('div');
+  chanceOfRainDivTitle.classList.add('weather-extra-info-subcontainer-title');
+  chanceOfRainDivTitle.innerHTML = 'CHANCE OF RAIN';
+  wrapper.appendChild(chanceOfRainDivTitle);
+
+  let windDivTitle = document.createElement('div');
+  windDivTitle.classList.add('weather-extra-info-subcontainer-title');
+  windDivTitle.innerHTML = 'WIND';
+  wrapper.appendChild(windDivTitle);
 
   let sunriseDiv = document.createElement('div');
-  let sunriseValue = currentData.sys.sunrise
-  let sunriseTime = new Date((sunriseValue) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
-  sunriseDiv.innerHTML = sunriseTime;
   sunriseDiv.setAttribute('id', 'weatherExtraInfoSunrise');
   sunriseDiv.classList.add('weather-extra-info-subcontainer');
-  container.appendChild(sunriseDiv);
-
-  console.log(currentData);
+  wrapper.appendChild(sunriseDiv);
 
   let sunsetDiv = document.createElement('div');
-  let sunsetValue = currentData.sys.sunset
-  let sunsetTime = new Date((sunsetValue) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
-  sunsetDiv.innerHTML = sunsetTime;
   sunsetDiv.setAttribute('id', 'weatherExtraInfoSunset');
   sunsetDiv.classList.add('weather-extra-info-subcontainer');
-  container.appendChild(sunsetDiv);
+  wrapper.appendChild(sunsetDiv);
 
-  let precipitationChanceDiv = document.createElement('div');
+  let humidityDiv = document.createElement('div');
+  humidityDiv.setAttribute('id', 'weatherExtraInfoHumidity');
+  humidityDiv.classList.add('weather-extra-info-subcontainer');
+  wrapper.appendChild(humidityDiv);
 
+  let chanceOfRainDiv = document.createElement('div');
+  chanceOfRainDiv.setAttribute('id', 'weatherExtraInfoRain');
+  chanceOfRainDiv.classList.add('weather-extra-info-subcontainer');
+  wrapper.appendChild(chanceOfRainDiv);
 
-  wrapper.appendChild(container);
+  let windDiv = document.createElement('div');
+  windDiv.setAttribute('id', 'weatherExtraInfoWind');
+  windDiv.classList.add('weather-extra-info-subcontainer');
+  wrapper.appendChild(windDiv);
+
+  container.appendChild(wrapper);
+
+}
+
+function drawWeekWeather() {
+  let container = document.getElementById('weatherWeek');
+
+  let dayContainer = document.createElement('div')
+  dayContainer.setAttribute('id', 'dayContainer');
+  dayContainer.classList.add('weather-week-info-container');
+  container.appendChild(dayContainer);
+
+  let iconContainer = document.createElement('div')
+  iconContainer.setAttribute('id', 'iconContainer');
+  iconContainer.classList.add('weather-week-info-container');
+  container.appendChild(iconContainer);
+
+  let rainContainer = document.createElement('div')
+  rainContainer.setAttribute('id', 'rainContainer');
+  rainContainer.classList.add('weather-week-info-container');
+  container.appendChild(rainContainer);
+
+  let humidityContainer = document.createElement('div')
+  humidityContainer.setAttribute('id', 'humidityContainer');
+  humidityContainer.classList.add('weather-week-info-container');
+  container.appendChild(humidityContainer);
+
+  let tempContainer = document.createElement('div')
+  tempContainer.setAttribute('id', 'tempContainer');
+  tempContainer.classList.add('weather-week-info-container');
+  container.appendChild(tempContainer);
+
+  let dayArray = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const d = new Date();
+  let day = d.getDay();
+
+  for (let i = 1; i < 8; i++) {
+
+    let dayDiv = document.createElement('div');
+    dayDiv.setAttribute('id', 'weatherWeekDay-' + i);
+    if (day >= 6) {
+      day = 0;
+    } else {
+      day++;
+    }
+    dayDiv.innerHTML = dayArray[day];
+    dayContainer.appendChild(dayDiv);
+
+    let weatherIcon = document.createElement('img');
+    weatherIcon.setAttribute('id', 'weatherWeekIcon-' + i)
+    iconContainer.appendChild(weatherIcon);
+
+    let chanceOfRain = document.createElement('div');
+    chanceOfRain.setAttribute('id', 'weatherWeekChanceOfRain-' + i)
+    rainContainer.appendChild(chanceOfRain);
+
+    let humidity = document.createElement('div');
+    humidity.setAttribute('id', 'weatherWeekHumidity-' + i);
+    humidityContainer.appendChild(humidity);
+
+    let temp = document.createElement('div');
+    temp.setAttribute('id', 'weatherWeekTemp-' + i);
+    tempContainer.appendChild(temp);
+
+  }
+
+}
+
+function drawFooter() {
+  let container = document.getElementById('footer');
+
+  let footerDiv = document.createElement('div');
+  footerDiv.setAttribute('id', 'footerDiv');
+  footerDiv.innerHTML = '&copy; https://github.com/dnevin234'
+  container.appendChild(footerDiv);
 }
 
 initializeBaseDivs();
 document.addEventListener("DOMContentLoaded", dataFetch, false);
-drawExtraInfo();
 
 async function dataFetch() {
-  currentWeather();
-  threeHourWeather();
+  weatherData();
 }
 
-  
+function injectData(weatherData) {
+
+  /* Current Weather Data Injection */
+  let weatherNowLocationDiv = document.getElementById('weatherNowLocation');
+  weatherNowLocationDiv.innerHTML = (weatherData.timezone);
+
+  let weatherNowPatternDiv = document.getElementById('weatherNowPattern');
+  weatherNowPatternDiv.innerHTML = (weatherData.current.weather[0].main);
+
+  let weatherNowPatternImg = document.getElementById('weatherNowPatternImg');
+  weatherNowPatternImg.src = ("http://openweathermap.org/img/wn/" + weatherData.current.weather[0].icon + ".png");
+
+  let weatherNowTempDiv = document.getElementById('weatherNowTemp');
+  weatherNowTempDiv.innerHTML = (Math.round(weatherData.current.temp -273.15) + '&#176;');
+
+  let weatherNowTempFeelsDiv = document.getElementById('weatherNowTempFeels');
+  weatherNowTempFeelsDiv.innerHTML = ('Feels like ' + Math.round(weatherData.current.feels_like -273.15) + '&#176;');
+
+  /* Per-Hour Weather Data Injection */
+  for (let i = 1; i <24; i++) {
+    let chanceOfRainDiv = document.getElementById('chanceOfRainDiv-' + i)
+    chanceOfRainDiv.innerHTML = Math.round(weatherData.hourly[i].pop * 100) + '%';
+
+    let dayWeatherIcon = document.getElementById('iconDiv-' + i);
+    dayWeatherIcon.src = ("http://openweathermap.org/img/wn/" + weatherData.hourly[i].weather[0].icon + ".png");
+
+    let tempDiv = document.getElementById('tempDiv-' + i)
+    tempDiv.innerHTML = (Math.round(weatherData.hourly[i].temp -273.15) + '&#176;');
+  }
+
+  /* Extra Info Weather Data Injection */
+  let sunriseDiv = document.getElementById('weatherExtraInfoSunrise');
+  let sunriseTime = new Date((weatherData.current.sunrise) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
+  sunriseDiv.innerHTML = sunriseTime;
+
+  let sunsetDiv = document.getElementById('weatherExtraInfoSunset');
+  let sunsetTime = new Date((weatherData.current.sunset) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
+  sunsetDiv.innerHTML = sunsetTime;
+
+  let humidityDiv = document.getElementById('weatherExtraInfoHumidity');
+  humidityDiv.innerHTML = (weatherData.current.humidity + '%');
+
+  let chanceOfRainDiv = document.getElementById('weatherExtraInfoRain');
+  chanceOfRainDiv.innerHTML = Math.round(weatherData.hourly[0].pop * 100) + '%';
+
+  let windDiv = document.getElementById('weatherExtraInfoWind');
+  windDiv.innerHTML = (Math.round(weatherData.current.wind_speed * 3.6) + ' km/h '+ parseWindDeg(weatherData.current.wind_deg));
+
+  /* Rest of the Week Weather Data */
+  for (let i = 1; i < 8; i++) {
+    let weekWeatherIcon = document.getElementById('weatherWeekIcon-' + i);
+    weekWeatherIcon.src = ("http://openweathermap.org/img/wn/" + weatherData.daily[i].weather[0].icon + ".png");
+
+    let chanceOfRain = document.getElementById('weatherWeekChanceOfRain-' + i);
+    chanceOfRain.innerHTML = Math.round(weatherData.daily[i].pop * 100) + '%';
+
+    let humidity = document.getElementById('weatherWeekHumidity-' + i);
+    humidity.innerHTML = Math.round(weatherData.daily[i].humidity) + '%';
+
+    let temp = document.getElementById('weatherWeekTemp-' + i);
+    temp.innerHTML = ('H: ' + Math.round(weatherData.daily[i].temp.max -273.15) + '&#176;' + ' L: ' + Math.round(weatherData.daily[i].temp.min -273.15) + '&#176;');
+  }
+}
