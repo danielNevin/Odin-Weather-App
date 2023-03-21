@@ -96,6 +96,7 @@ function drawHeader() {
 
   let headerInputBox = document.createElement('input');
   headerInputBox.setAttribute('id', 'headerInputBox');
+  headerInputBox.placeholder = 'Search for a location';
   headerInputDiv.appendChild(headerInputBox);
 
   let headerInputSubmit = document.createElement('button');

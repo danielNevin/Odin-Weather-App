@@ -141,12 +141,8 @@ button:active {
   width: fit-content;
 }
 
-.three-hour-container-rain, #weatherExtraInfoRain , #rainContainer {
+.three-hour-container-rain, #weatherExtraInfoRain , #rainContainer, #weatherExtraInfoPrecipitation {
   color: rgb(60, 134, 204);
-}
-
-#weatherExtraInfoPrecipitation {
-  color: rgb(1, 28, 108);
 }
 
 #extraInfo {
