@@ -2,30 +2,107 @@ body {
   margin: 0 4vw 0 4vw;
 }
 
+img {
+  height: 4em;
+}
+
 #content {
   display: grid;
   height: 100%;
-  grid-template-rows: 1fr 3fr 2fr 5fr 1fr;
-  gap: 2vh;
+  grid-template-rows: 1fr 2fr 1.5fr 3.5fr 0.5fr;
+  gap: 1vh;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   font-size: 16px;
+  justify-items: center;
+}
+#header {
+  width: 100%;
 }
 
-#header {
+#headerWrapper {
+  width: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  padding: 2vh 2vw 2vh 2vw;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+}
 
+#headerInputDiv {
+  display: flex;
+  gap: 3vw;
+}
+
+#headerInputBox {
+  width: 12vw;
+  border: 0;
+  border-radius: 50px;
+  padding: 0.5vh 1vw 0.5vh 1vw;
+  font-size: 1em;
+  letter-spacing: 0.05em;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 10px 30px -12px inset, rgba(0, 0, 0, 0.3) 0px 9px 18px -9px inset;
+  padding-right: 10px;
+}
+
+#headerInputSubmit {
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 3px solid rgb(157, 157, 157);
+  border-radius: 50px;
+  padding: 0.5vh 1vw 0.5vh 1vw;
+  font-size: 1em;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  box-shadow: rgba(45, 35, 66, 0.4) 0 2px 4px,rgba(45, 35, 66, 0.3) 0 7px 13px -3px,#D6D6E7 0 -3px 0 inset;
+}
+
+#headerUnitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5vh 1vw 0.5vh 1vw;
+  font-size: 1.2em;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 3px solid rgb(157, 157, 157);
+  border-radius: 20px;
+  box-shadow: rgba(45, 35, 66, 0.4) 0 2px 4px,rgba(45, 35, 66, 0.3) 0 7px 13px -3px,#D6D6E7 0 -3px 0 inset;
+}
+
+button:focus {
+  transition: 0.1s;
+  box-shadow: #D6D6E7 0 0 0 1.5px inset, rgba(45, 35, 66, 0.4) 0 2px 4px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset;
+}
+
+button:hover {
+  transition: 0.1s;
+  box-shadow: rgba(45, 35, 66, 0.4) 0 4px 8px, rgba(45, 35, 66, 0.3) 0 7px 13px -3px, #D6D6E7 0 -3px 0 inset;
+  transform: translateY(-2px);
+}
+
+button:active {
+  transition: 0.1s;
+  box-shadow: #D6D6E7 0 3px 7px inset;
+  transform: translateY(2px);
 }
 
 #weatherToday {
   display: grid;
   grid-template-columns: 1fr 3fr;
-  gap: 4vh;
+  gap: 4vw;
 }
 
 #weatherNow {
   display: flex;
   flex-direction: column;
-  padding: 3vh;
+  padding: 2vh 2vw 2vh 2vw;
   gap: 1vh;
+  font-size: 1em;
   align-items: center;
   justify-content: center;
   border-radius: 10px;
@@ -41,7 +118,7 @@ body {
   flex-direction: row;
   overflow-y: hidden;
   overflow-x: scroll;
-  padding: 3vh;
+  padding: 2vh 2vw 2vh 2vw;
   gap: 2vw;
   align-items: center;
   border-radius: 10px;
@@ -53,7 +130,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2vh;
+  padding: 2vh 2vw 2vh 2vw;
   gap: 1vh;
 }
 
@@ -64,8 +141,12 @@ body {
   width: fit-content;
 }
 
-.three-hour-container-rain {
+.three-hour-container-rain, #weatherExtraInfoRain , #rainContainer {
   color: rgb(60, 134, 204);
+}
+
+#weatherExtraInfoPrecipitation {
+  color: rgb(1, 28, 108);
 }
 
 #extraInfo {
@@ -76,13 +157,13 @@ body {
 }
 
 #weatherExtraInfoWrapper {
-  width: 70%;
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   grid-template-rows: repeat(2, 1fr);
   align-items: center;
   justify-content: space-between;
-  padding: 3vh;
+  padding: 2vh 2vw 2vh 2vw;
   gap: 1vh;
   border-radius: 10px;
   box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
@@ -103,11 +184,15 @@ body {
   font-size: 1.2em;
 }
 
+#weatherExtraInfoHumidity, #humidityContainer {
+  color: rgb(255, 163, 51);
+}
+
 #weatherWeek {
   width: 60%;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  padding: 3vh;
+  padding: 2vh 2vw 2vh 2vw;
   align-items: center;
   justify-items: center;
   border-radius: 10px;

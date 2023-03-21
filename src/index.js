@@ -1,4 +1,4 @@
-import { set, wrap } from "lodash";
+import { head, set, wrap } from "lodash";
 import { moment } from "moment-es6";
 import './style.css';
 
@@ -46,9 +46,7 @@ async function userLocationWeatherData(position) {
   return data;
 }
 
-async function deafultValueWeatherData() {
-  alert('This service requires location data; Loading Default Values');
-  let City = 'London';
+async function weatherDataFetch(City) {
   const response1 = await fetch('http://api.openweathermap.org/geo/1.0/direct?q=' + City + '&limit=5&appid=' + apiKey, { mode: 'cors' });
   const geoData = await response1.json();
   const response2 = await fetch('https://api.openweathermap.org/data/3.0/onecall?lat=' + geoData[0].lat + '&lon=' + geoData[0].lon + '&appid=eae1491e89f960425a0971c74103081f', { mode: 'cors' });
@@ -56,12 +54,16 @@ async function deafultValueWeatherData() {
   return data;
 }
 
-function weatherData() {
+function renderWeatherDivs() {
+  drawHeader()
   drawWeatherNow();
   drawWeatherNext24Hours();
   drawExtraInfo();
   drawWeekWeather();
   drawFooter();
+}
+
+function weatherData() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(async(position) => {
       weatherData = await userLocationWeatherData(position);
@@ -69,12 +71,50 @@ function weatherData() {
       injectData(weatherData);
     },
     async(err) => {
-      weatherData = await deafultValueWeatherData();
+      weatherData = await weatherDataFetch('Palmerston North');
       injectData(weatherData);
     })
   } else {
     alert('Geolocation is not supported by your browser')
   }
+}
+
+function drawHeader() {
+  let container = document.getElementById('header');
+
+  let wrapper = document.createElement('div');
+  wrapper.setAttribute('id', 'headerWrapper');
+
+  let headerLogo = document.createElement('img');
+  headerLogo.src = 'https://seeklogo.com/images/O/openweather-logo-3CE20F48B5-seeklogo.com.png';
+  headerLogo.setAttribute('id', 'headerLogo');
+  wrapper.appendChild(headerLogo);
+  
+  let headerInputDiv = document.createElement('div');
+  headerInputDiv.setAttribute('id', 'headerInputDiv');
+  wrapper.appendChild(headerInputDiv);
+
+  let headerInputBox = document.createElement('input');
+  headerInputBox.setAttribute('id', 'headerInputBox');
+  headerInputDiv.appendChild(headerInputBox);
+
+  let headerInputSubmit = document.createElement('button');
+  headerInputSubmit.setAttribute('id', 'headerInputSubmit');
+  headerInputSubmit.innerHTML = 'SEARCH'
+  headerInputSubmit.onclick = async function() {
+    let City = document.getElementById('headerInputBox').value;
+    document.getElementById('headerInputBox').value = '';
+    let weatherData = await weatherDataFetch(City);
+    injectData(weatherData);
+  }
+  headerInputDiv.appendChild(headerInputSubmit);
+
+  let headerUnitButton = document.createElement('button');
+  headerUnitButton.setAttribute('id', 'headerUnitButton');
+  headerUnitButton.innerHTML = '&#176;C'
+  wrapper.appendChild(headerUnitButton);
+
+  container.appendChild(wrapper);
 }
 
 function drawWeatherNow() {
@@ -170,6 +210,11 @@ function drawExtraInfo() {
   humidityDivTitle.innerHTML = 'HUMIDITY';
   wrapper.appendChild(humidityDivTitle);
 
+  let precipitationDivTitle = document.createElement('div');
+  precipitationDivTitle.classList.add('weather-extra-info-subcontainer-title');
+  precipitationDivTitle.innerHTML = 'TOTAL RAIN';
+  wrapper.appendChild(precipitationDivTitle);
+
   let chanceOfRainDivTitle = document.createElement('div');
   chanceOfRainDivTitle.classList.add('weather-extra-info-subcontainer-title');
   chanceOfRainDivTitle.innerHTML = 'CHANCE OF RAIN';
@@ -179,6 +224,11 @@ function drawExtraInfo() {
   windDivTitle.classList.add('weather-extra-info-subcontainer-title');
   windDivTitle.innerHTML = 'WIND';
   wrapper.appendChild(windDivTitle);
+
+  let pressureDivTitle = document.createElement('div');
+  pressureDivTitle.classList.add('weather-extra-info-subcontainer-title');
+  pressureDivTitle.innerHTML = 'PRESSURE';
+  wrapper.appendChild(pressureDivTitle);
 
   let sunriseDiv = document.createElement('div');
   sunriseDiv.setAttribute('id', 'weatherExtraInfoSunrise');
@@ -195,6 +245,11 @@ function drawExtraInfo() {
   humidityDiv.classList.add('weather-extra-info-subcontainer');
   wrapper.appendChild(humidityDiv);
 
+  let precipitationDiv = document.createElement('div');
+  precipitationDiv.setAttribute('id', 'weatherExtraInfoPrecipitation');
+  precipitationDiv.classList.add('weather-extra-info-subcontainer');
+  wrapper.appendChild(precipitationDiv);
+
   let chanceOfRainDiv = document.createElement('div');
   chanceOfRainDiv.setAttribute('id', 'weatherExtraInfoRain');
   chanceOfRainDiv.classList.add('weather-extra-info-subcontainer');
@@ -204,6 +259,11 @@ function drawExtraInfo() {
   windDiv.setAttribute('id', 'weatherExtraInfoWind');
   windDiv.classList.add('weather-extra-info-subcontainer');
   wrapper.appendChild(windDiv);
+
+  let pressureDiv = document.createElement('div');
+  pressureDiv.setAttribute('id', 'weatherExtraInfoPressure');
+  pressureDiv.classList.add('weather-extra-info-subcontainer');
+  wrapper.appendChild(pressureDiv);
 
   container.appendChild(wrapper);
 
@@ -222,15 +282,15 @@ function drawWeekWeather() {
   iconContainer.classList.add('weather-week-info-container');
   container.appendChild(iconContainer);
 
-  let rainContainer = document.createElement('div')
-  rainContainer.setAttribute('id', 'rainContainer');
-  rainContainer.classList.add('weather-week-info-container');
-  container.appendChild(rainContainer);
-
   let humidityContainer = document.createElement('div')
   humidityContainer.setAttribute('id', 'humidityContainer');
   humidityContainer.classList.add('weather-week-info-container');
   container.appendChild(humidityContainer);
+
+  let rainContainer = document.createElement('div')
+  rainContainer.setAttribute('id', 'rainContainer');
+  rainContainer.classList.add('weather-week-info-container');
+  container.appendChild(rainContainer);
 
   let tempContainer = document.createElement('div')
   tempContainer.setAttribute('id', 'tempContainer');
@@ -283,6 +343,7 @@ function drawFooter() {
 }
 
 initializeBaseDivs();
+renderWeatherDivs()
 document.addEventListener("DOMContentLoaded", dataFetch, false);
 
 async function dataFetch() {
@@ -331,11 +392,17 @@ function injectData(weatherData) {
   let humidityDiv = document.getElementById('weatherExtraInfoHumidity');
   humidityDiv.innerHTML = (weatherData.current.humidity + '%');
 
+  let precipitationDiv = document.getElementById('weatherExtraInfoPrecipitation');
+  precipitationDiv.innerHTML = (Math.round(weatherData.daily[0].rain) + 'mm');
+
   let chanceOfRainDiv = document.getElementById('weatherExtraInfoRain');
   chanceOfRainDiv.innerHTML = Math.round(weatherData.hourly[0].pop * 100) + '%';
 
   let windDiv = document.getElementById('weatherExtraInfoWind');
   windDiv.innerHTML = (Math.round(weatherData.current.wind_speed * 3.6) + ' km/h '+ parseWindDeg(weatherData.current.wind_deg));
+
+  let pressureDiv = document.getElementById('weatherExtraInfoPressure');
+  pressureDiv.innerHTML = (Math.round(weatherData.current.pressure) + ' hPa');
 
   /* Rest of the Week Weather Data */
   for (let i = 1; i < 8; i++) {
@@ -349,6 +416,6 @@ function injectData(weatherData) {
     humidity.innerHTML = Math.round(weatherData.daily[i].humidity) + '%';
 
     let temp = document.getElementById('weatherWeekTemp-' + i);
-    temp.innerHTML = ('H: ' + Math.round(weatherData.daily[i].temp.max -273.15) + '&#176;' + ' L: ' + Math.round(weatherData.daily[i].temp.min -273.15) + '&#176;');
+    temp.innerHTML = ('H: ' + Math.round(weatherData.daily[i].temp.max -273.15) + '&#176;' + '   L: ' + Math.round(weatherData.daily[i].temp.min -273.15) + '&#176;');
   }
 }
