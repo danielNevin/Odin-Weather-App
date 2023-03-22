@@ -1,37 +1,30 @@
-import { head, set, wrap } from "lodash";
+import { head, set, toUpper, wrap } from "lodash";
 import { moment } from "moment-es6";
 import './style.css';
 
+let weatherData;
 let apiKey = 'eae1491e89f960425a0971c74103081f'
 
 function initializeBaseDivs() {
-  let container = document.createElement('div');
-  container.setAttribute('id', 'content');
-  document.body.appendChild(container);
-  
   let headerDiv = document.createElement('div');
   headerDiv.setAttribute('id', 'header');
-  container.appendChild(headerDiv);
+  document.body.appendChild(headerDiv);
+
+  let contentDiv = document.createElement('div');
+  contentDiv.setAttribute('id', 'content');
+  document.body.appendChild(contentDiv);
 
   let weatherTodayDiv = document.createElement('div');
   weatherTodayDiv.setAttribute('id', 'weatherToday');
-  container.appendChild(weatherTodayDiv);
+  contentDiv.appendChild(weatherTodayDiv);
 
   let extraInfoDiv = document.createElement('div');
   extraInfoDiv.setAttribute('id', 'extraInfo');
-  container.appendChild(extraInfoDiv);
+  contentDiv.appendChild(extraInfoDiv);
 
   let weatherWeekDiv = document.createElement('div');
   weatherWeekDiv.setAttribute('id', 'weatherWeek');
-  container.appendChild(weatherWeekDiv);
-
-  let footerDiv = document.createElement('div');
-  footerDiv.setAttribute('id', 'footer');
-  container.appendChild(footerDiv);
-}
-
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+  contentDiv.appendChild(weatherWeekDiv);
 }
 
 function parseWindDeg(degrees) {
@@ -55,20 +48,22 @@ async function weatherDataFetch(City) {
 }
 
 function renderWeatherDivs() {
-  drawHeader()
   drawWeatherNow();
   drawWeatherNext24Hours();
   drawExtraInfo();
   drawWeekWeather();
-  drawFooter();
 }
 
-function weatherData() {
+function weatherDataGeolocation() {
   if (navigator.geolocation) {
+    drawLoadingIcon();
     navigator.geolocation.getCurrentPosition(async(position) => {
       weatherData = await userLocationWeatherData(position);
+      removeLoadingIcon();
       console.log(weatherData);
+      renderWeatherDivs();
       injectData(weatherData);
+      animateWeatherDivCreation();
     },
     async(err) => {
       weatherData = await weatherDataFetch('Palmerston North');
@@ -105,8 +100,14 @@ function drawHeader() {
   headerInputSubmit.onclick = async function() {
     let City = document.getElementById('headerInputBox').value;
     document.getElementById('headerInputBox').value = '';
-    let weatherData = await weatherDataFetch(City);
+    weatherDivRemoval();
+    drawLoadingIcon();
+    weatherData = await weatherDataFetch(City);
+    removeLoadingIcon();
+    console.log(weatherData);
+    renderWeatherDivs();
     injectData(weatherData);
+    animateWeatherDivCreation();
   }
   headerInputDiv.appendChild(headerInputSubmit);
 
@@ -114,6 +115,15 @@ function drawHeader() {
   headerUnitButton.setAttribute('id', 'headerUnitButton');
   headerUnitButton.innerHTML = '&#176;C'
   wrapper.appendChild(headerUnitButton);
+  headerUnitButton.onclick = function() {
+    if (headerUnitButton.innerHTML === '°C') {
+      headerUnitButton.innerHTML = '°F';
+      injectData(weatherData);
+    } else if (headerUnitButton.innerHTML === '°F') {
+      headerUnitButton.innerHTML = '°C';
+      injectData(weatherData);
+    };
+  }
 
   container.appendChild(wrapper);
 }
@@ -273,30 +283,35 @@ function drawExtraInfo() {
 function drawWeekWeather() {
   let container = document.getElementById('weatherWeek');
 
+  let wrapper = document.createElement('div');
+  wrapper.setAttribute('id', 'weatherWeekWrapper');
+
   let dayContainer = document.createElement('div')
   dayContainer.setAttribute('id', 'dayContainer');
   dayContainer.classList.add('weather-week-info-container');
-  container.appendChild(dayContainer);
+  wrapper.appendChild(dayContainer);
 
   let iconContainer = document.createElement('div')
   iconContainer.setAttribute('id', 'iconContainer');
   iconContainer.classList.add('weather-week-info-container');
-  container.appendChild(iconContainer);
+  wrapper.appendChild(iconContainer);
 
   let humidityContainer = document.createElement('div')
   humidityContainer.setAttribute('id', 'humidityContainer');
   humidityContainer.classList.add('weather-week-info-container');
-  container.appendChild(humidityContainer);
+  wrapper.appendChild(humidityContainer);
 
   let rainContainer = document.createElement('div')
   rainContainer.setAttribute('id', 'rainContainer');
   rainContainer.classList.add('weather-week-info-container');
-  container.appendChild(rainContainer);
+  wrapper.appendChild(rainContainer);
 
   let tempContainer = document.createElement('div')
   tempContainer.setAttribute('id', 'tempContainer');
   tempContainer.classList.add('weather-week-info-container');
-  container.appendChild(tempContainer);
+  wrapper.appendChild(tempContainer);
+
+  container.appendChild(wrapper);
 
   let dayArray = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const d = new Date();
@@ -334,22 +349,96 @@ function drawWeekWeather() {
 
 }
 
-function drawFooter() {
-  let container = document.getElementById('footer');
+function drawLoadingIcon() {
+  let container = document.createElement('div');
+  container.setAttribute('id', 'loadingIconContainer');
+  
+  let loadingRing = document.createElement('div');
+  loadingRing.setAttribute('id', 'loadingRing');
+  container.appendChild(loadingRing);
 
-  let footerDiv = document.createElement('div');
-  footerDiv.setAttribute('id', 'footerDiv');
-  footerDiv.innerHTML = '&copy; https://github.com/dnevin234'
-  container.appendChild(footerDiv);
+  container.classList.add('draw-loading-icon');
+  setTimeout(function() {
+    container.classList.remove('draw-loading-icon');
+  }, 500);
+
+  document.body.appendChild(container);
+}
+
+function removeLoadingIcon() {
+  let container = document.getElementById('loadingIconContainer');
+  container.classList.add('remove-loading-icon');
+  setTimeout(function() {
+    container.classList.remove('remove-loading-icon');
+    document.getElementById('loadingIconContainer').remove();
+  }, 500);
+}
+
+function temperatureHandler(temp) {
+  if (document.getElementById('headerUnitButton').innerHTML === '°C') {
+    let calculatedTemp = Math.round(temp - 273.15);
+    return calculatedTemp + '°';
+  } else if (document.getElementById('headerUnitButton').innerHTML ==='°F') {
+    let calculatedTemp = Math.round((temp - 273.15) * (9/5) + 32);
+    return calculatedTemp + '°';
+  } else {
+    alert('This should not happen');
+  }
+}
+
+function animateWeatherDivCreation() {
+  let now = document.getElementById('weatherNow');
+  now.classList.add('animate-div-creation-left');
+
+  let hourly = document.getElementById('weather3Hour');
+  hourly.classList.add('animate-div-creation-right');
+
+  let extraInfo = document.getElementById('weatherExtraInfoWrapper');
+  extraInfo.classList.add('animate-div-creation-right');
+
+  let daily = document.getElementById('weatherWeekWrapper');
+  daily.classList.add('animate-div-creation-left');
+
+  setTimeout(function() {
+    now.classList.remove('animate-div-creation-left');
+    hourly.classList.remove('animate-div-creation-right');
+    extraInfo.classList.remove('animate-div-creation-right');
+    daily.classList.remove('animate-div-creation-left');
+  }, 500);
+}
+
+function weatherDivRemoval() {
+  let now = document.getElementById('weatherNow');
+  now.classList.add('animate-div-removal-left');
+
+  let hourly = document.getElementById('weather3Hour');
+  hourly.classList.add('animate-div-removal-right');
+
+  let extraInfo = document.getElementById('weatherExtraInfoWrapper');
+  extraInfo.classList.add('animate-div-removal-right');
+
+  let daily = document.getElementById('weatherWeekWrapper');
+  daily.classList.add('animate-div-removal-left');
+
+  setTimeout(function() {
+    now.classList.remove('animate-div-removal-left');
+    hourly.classList.remove('animate-div-removal-right');
+    extraInfo.classList.remove('animate-div-removal-right');
+    daily.classList.remove('animate-div-removal-left');
+    document.getElementById('weatherNow').remove();
+    document.getElementById('weather3Hour').remove();
+    document.getElementById('weatherExtraInfoWrapper').remove();
+    document.getElementById('weatherWeekWrapper').remove();
+  }, 500);
+}
+
+async function dataFetch() {
+  weatherDataGeolocation();
 }
 
 initializeBaseDivs();
-renderWeatherDivs()
+drawHeader();
 document.addEventListener("DOMContentLoaded", dataFetch, false);
-
-async function dataFetch() {
-  weatherData();
-}
 
 function injectData(weatherData) {
 
@@ -364,10 +453,10 @@ function injectData(weatherData) {
   weatherNowPatternImg.src = ("http://openweathermap.org/img/wn/" + weatherData.current.weather[0].icon + ".png");
 
   let weatherNowTempDiv = document.getElementById('weatherNowTemp');
-  weatherNowTempDiv.innerHTML = (Math.round(weatherData.current.temp -273.15) + '&#176;');
+  weatherNowTempDiv.innerHTML = temperatureHandler(weatherData.current.temp);
 
   let weatherNowTempFeelsDiv = document.getElementById('weatherNowTempFeels');
-  weatherNowTempFeelsDiv.innerHTML = ('Feels like ' + Math.round(weatherData.current.feels_like -273.15) + '&#176;');
+  weatherNowTempFeelsDiv.innerHTML = ('Feels like ' + temperatureHandler(weatherData.current.feels_like));
 
   /* Per-Hour Weather Data Injection */
   for (let i = 1; i <24; i++) {
@@ -378,7 +467,7 @@ function injectData(weatherData) {
     dayWeatherIcon.src = ("http://openweathermap.org/img/wn/" + weatherData.hourly[i].weather[0].icon + ".png");
 
     let tempDiv = document.getElementById('tempDiv-' + i)
-    tempDiv.innerHTML = (Math.round(weatherData.hourly[i].temp -273.15) + '&#176;');
+    tempDiv.innerHTML = temperatureHandler(weatherData.hourly[i].temp);
   }
 
   /* Extra Info Weather Data Injection */
@@ -394,8 +483,12 @@ function injectData(weatherData) {
   humidityDiv.innerHTML = (weatherData.current.humidity + '%');
 
   let precipitationDiv = document.getElementById('weatherExtraInfoPrecipitation');
-  precipitationDiv.innerHTML = (Math.round(weatherData.daily[0].rain) + 'mm');
-
+  if (Object.hasOwn(weatherData.daily[0], 'rain')) {
+    precipitationDiv.innerHTML = (Math.round(weatherData.daily[0].rain) + 'mm');
+  } else {
+    precipitationDiv.innerHTML = '0mm';
+  }
+  
   let chanceOfRainDiv = document.getElementById('weatherExtraInfoRain');
   chanceOfRainDiv.innerHTML = Math.round(weatherData.hourly[0].pop * 100) + '%';
 
@@ -417,6 +510,6 @@ function injectData(weatherData) {
     humidity.innerHTML = Math.round(weatherData.daily[i].humidity) + '%';
 
     let temp = document.getElementById('weatherWeekTemp-' + i);
-    temp.innerHTML = ('H: ' + Math.round(weatherData.daily[i].temp.max -273.15) + '&#176;' + '   L: ' + Math.round(weatherData.daily[i].temp.min -273.15) + '&#176;');
+    temp.innerHTML = ('H: ' + temperatureHandler(weatherData.daily[i].temp.max) + ' L: ' + temperatureHandler(weatherData.daily[i].temp.min));
   }
 }
