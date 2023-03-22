@@ -1,11 +1,10 @@
-import { head, set, toUpper, wrap } from "lodash";
-import { moment } from "moment-es6";
 import './style.css';
 
 let weatherData;
 let localTimezoneOffset;
 let apiKey = 'eae1491e89f960425a0971c74103081f'
 
+/* Rendering the base targetable divs */
 function initializeBaseDivs() {
   let headerDiv = document.createElement('div');
   headerDiv.setAttribute('id', 'header');
@@ -28,18 +27,21 @@ function initializeBaseDivs() {
   contentDiv.appendChild(weatherWeekDiv);
 }
 
+/* Takes the winddeg value from the API call and calculates a cardinal direction */
 function parseWindDeg(degrees) {
   let index = parseInt((degrees / 22.5) + .5);
   let directionArray = ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
   return directionArray[(index % 16)];
 }
 
+/* API call using location data retrieved by the browser */
 async function userLocationWeatherData(position) {
   const reponse = await fetch('https://api.openweathermap.org/data/3.0/onecall?lat=' + position.coords.latitude + '&lon=' + position.coords.longitude + '&appid=eae1491e89f960425a0971c74103081f', { mode: 'cors' });
   const data = await reponse.json();
   return data;
 }
 
+/* API call using the City string obtained from the input box in the page header */
 async function weatherDataFetch(City) {
   const response1 = await fetch('https://api.openweathermap.org/geo/1.0/direct?q=' + City + '&limit=5&appid=' + apiKey, { mode: 'cors' });
   const geoData = await response1.json();
@@ -48,6 +50,7 @@ async function weatherDataFetch(City) {
   return data;
 }
 
+/* Greater rendering function that renders the weather data divs */
 function renderWeatherDivs() {
   drawWeatherNow();
   drawWeatherNext24Hours();
@@ -57,25 +60,25 @@ function renderWeatherDivs() {
 
 function weatherDataGeolocation() {
   if (navigator.geolocation) {
-    drawLoadingIcon();
-    navigator.geolocation.getCurrentPosition(async(position) => {
-      weatherData = await userLocationWeatherData(position);
-      removeLoadingIcon();
-      console.log(weatherData);
-      renderWeatherDivs();
-      localTimezoneOffset = weatherData.timezone_offset;
-      injectData(weatherData);
-      animateWeatherDivCreation();
+    drawLoadingIcon();                                            /* Draw Loading Icon while waiting for location data */
+    navigator.geolocation.getCurrentPosition(async(position) => { /* Get current position via browser location privilege */
+      weatherData = await userLocationWeatherData(position);      /* API call from above using browser location lat and lon */
+      removeLoadingIcon();                                        /* Remove Loading Icon now that information requests have completed */
+      renderWeatherDivs();                                        /* Render all weather divs to have somewhere to put the data */
+      localTimezoneOffset = weatherData.timezone_offset;          /* Save the local timezone_offset of the users location */
+      injectData(weatherData);                                    /* Inject the data from the API call into the now rendered divs */
+      animateWeatherDivCreation();                                /* Adds a class to the weather divs that animates their creation */
     },
     async(err) => {
-      weatherData = await weatherDataFetch('Palmerston North');
+      weatherData = await weatherDataFetch('Palmerston North');   /* In the event of an error, just display the weather in Palmerston North */
       injectData(weatherData);
     })
   } else {
-    alert('Geolocation is not supported by your browser')
+    alert('Geolocation is not supported by your browser')         /* If the browser somehow doesn't support Geolocation, alert the user */
   }
 }
 
+/* Render all the header divs and content */
 function drawHeader() {
   let container = document.getElementById('header');
 
@@ -100,8 +103,8 @@ function drawHeader() {
   headerInputSubmit.setAttribute('id', 'headerInputSubmit');
   headerInputSubmit.innerHTML = 'SEARCH'
   headerInputSubmit.onclick = async function() {
-    let City = document.getElementById('headerInputBox').value;
-    if (City === '') {
+    let City = document.getElementById('headerInputBox').value; /* On "SEARCH" button click, take the City string and fetch the relevant weather data */
+    if (City === '') {                                          /* and input this information into the relevant divs with animations and a loading screen */
       alert('Please add a City to your search');
     } else {
       document.getElementById('headerInputBox').value = '';
@@ -109,7 +112,6 @@ function drawHeader() {
       drawLoadingIcon();
       weatherData = await weatherDataFetch(City);
       removeLoadingIcon();
-      console.log(weatherData);
       renderWeatherDivs();
       injectData(weatherData);
       animateWeatherDivCreation();
@@ -122,7 +124,7 @@ function drawHeader() {
   headerUnitButton.innerHTML = '&#176;C'
   wrapper.appendChild(headerUnitButton);
   headerUnitButton.onclick = function() {
-    if (headerUnitButton.innerHTML === '°C') {
+    if (headerUnitButton.innerHTML === '°C') {  /* Toggles weather the temperatures on the page are calculated as Celsius or Farenheit */
       headerUnitButton.innerHTML = '°F';
       injectData(weatherData);
     } else if (headerUnitButton.innerHTML === '°F') {
@@ -134,6 +136,7 @@ function drawHeader() {
   container.appendChild(wrapper);
 }
 
+/* Creates the divs that sit within the Weather Now div */
 function drawWeatherNow() {
   let container = document.getElementById('weatherToday');
 
@@ -164,20 +167,21 @@ function drawWeatherNow() {
 
 }
 
+/* Creates the divs that sit within the Weather 24H div */
 function drawWeatherNext24Hours() {
   let container = document.getElementById('weatherToday');
 
   let outerWrapper = document.createElement('div');
-  outerWrapper.setAttribute('id', 'weather3Hour');
+  outerWrapper.setAttribute('id', 'weather24Hour');
 
   for (let i = 1; i <24; i++) {
     let wrapper = document.createElement('div');
-    wrapper.setAttribute('id', 'weather3HourContainer-' + i);
-    wrapper.classList.add('three-hour-container')
+    wrapper.setAttribute('id', 'weather24HourContainer-' + i);
+    wrapper.classList.add('twentyfour-hour-container')
 
     let timeDiv = document.createElement('span');
     timeDiv.setAttribute('id', 'timeDiv-' + i);
-    timeDiv.classList.add('three-hour-container-time');
+    timeDiv.classList.add('twentyfour-hour-container-time');
     if (i === 1) {
       timeDiv.innerHTML = ('in ' + i + ' Hour');
     } else {
@@ -187,7 +191,7 @@ function drawWeatherNext24Hours() {
 
     let chanceOfRainDiv = document.createElement('div');
     chanceOfRainDiv.setAttribute('id', 'chanceOfRainDiv-' + i);
-    chanceOfRainDiv.classList.add('three-hour-container-rain');
+    chanceOfRainDiv.classList.add('twentyfour-hour-container-rain');
     wrapper.appendChild(chanceOfRainDiv);
 
     let weatherIcon = document.createElement('img');
@@ -196,7 +200,7 @@ function drawWeatherNext24Hours() {
 
     let tempDiv = document.createElement('div');
     tempDiv.setAttribute('id', 'tempDiv-' + i);
-    tempDiv.classList.add('three-hour-container-temp');
+    tempDiv.classList.add('twentyfour-hour-container-temp');
     wrapper.appendChild(tempDiv);
 
     outerWrapper.appendChild(wrapper)
@@ -206,6 +210,7 @@ function drawWeatherNext24Hours() {
 
 }
 
+/* Creates the divs that sit within the Extran Weather Info div */
 function drawExtraInfo() {
   let container = document.getElementById('extraInfo');
 
@@ -286,6 +291,7 @@ function drawExtraInfo() {
 
 }
 
+/* Creates the divs that sit within the Weekly Weather div */
 function drawWeekWeather() {
   let container = document.getElementById('weatherWeek');
 
@@ -323,6 +329,7 @@ function drawWeekWeather() {
   const d = new Date();
   let day = d.getDay();
 
+  /* Renders the divs for the following week of weather */
   for (let i = 1; i < 8; i++) {
 
     let dayDiv = document.createElement('div');
@@ -355,6 +362,7 @@ function drawWeekWeather() {
 
 }
 
+/* Function for drawing the loading icon when required */
 function drawLoadingIcon() {
   let container = document.createElement('div');
   container.setAttribute('id', 'loadingIconContainer');
@@ -371,6 +379,7 @@ function drawLoadingIcon() {
   document.body.appendChild(container);
 }
 
+/* Function for removing the loading icon */
 function removeLoadingIcon() {
   let container = document.getElementById('loadingIconContainer');
   container.classList.add('remove-loading-icon');
@@ -380,6 +389,7 @@ function removeLoadingIcon() {
   }, 500);
 }
 
+/* Function for calculating the output temperature in either Celsius or Farenheit */
 function temperatureHandler(temp) {
   if (document.getElementById('headerUnitButton').innerHTML === '°C') {
     let calculatedTemp = Math.round(temp - 273.15);
@@ -392,11 +402,12 @@ function temperatureHandler(temp) {
   }
 }
 
+/* Function for animating the creation of the weather divs */
 function animateWeatherDivCreation() {
   let now = document.getElementById('weatherNow');
   now.classList.add('animate-div-creation-left');
 
-  let hourly = document.getElementById('weather3Hour');
+  let hourly = document.getElementById('weather24Hour');
   hourly.classList.add('animate-div-creation-right');
 
   let extraInfo = document.getElementById('weatherExtraInfoWrapper');
@@ -413,11 +424,12 @@ function animateWeatherDivCreation() {
   }, 500);
 }
 
+/* Function for animating the removal of the weather divs */
 function weatherDivRemoval() {
   let now = document.getElementById('weatherNow');
   now.classList.add('animate-div-removal-left');
 
-  let hourly = document.getElementById('weather3Hour');
+  let hourly = document.getElementById('weather24Hour');
   hourly.classList.add('animate-div-removal-right');
 
   let extraInfo = document.getElementById('weatherExtraInfoWrapper');
@@ -432,20 +444,13 @@ function weatherDivRemoval() {
     extraInfo.classList.remove('animate-div-removal-right');
     daily.classList.remove('animate-div-removal-left');
     document.getElementById('weatherNow').remove();
-    document.getElementById('weather3Hour').remove();
+    document.getElementById('weather24Hour').remove();
     document.getElementById('weatherExtraInfoWrapper').remove();
     document.getElementById('weatherWeekWrapper').remove();
   }, 500);
 }
 
-async function dataFetch() {
-  weatherDataGeolocation();
-}
-
-initializeBaseDivs();
-drawHeader();
-document.addEventListener("DOMContentLoaded", dataFetch, false);
-
+/* Function that handles the display of the weather data obtained from the prior API call by hunting through received object */
 function injectData(weatherData) {
 
   /* Current Weather Data Injection */
@@ -519,3 +524,13 @@ function injectData(weatherData) {
     temp.innerHTML = ('H: ' + temperatureHandler(weatherData.daily[i].temp.max) + ' L: ' + temperatureHandler(weatherData.daily[i].temp.min));
   }
 }
+
+/* Calls the weather geolocation browser request asynchronously */
+async function dataFetch() {
+  weatherDataGeolocation();
+}
+
+/* Builds the Base divs, draws the header, and when finished requests for geolocation data via the browser */
+initializeBaseDivs();
+drawHeader();
+document.addEventListener("DOMContentLoaded", dataFetch, false);
