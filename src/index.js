@@ -99,15 +99,19 @@ function drawHeader() {
   headerInputSubmit.innerHTML = 'SEARCH'
   headerInputSubmit.onclick = async function() {
     let City = document.getElementById('headerInputBox').value;
-    document.getElementById('headerInputBox').value = '';
-    weatherDivRemoval();
-    drawLoadingIcon();
-    weatherData = await weatherDataFetch(City);
-    removeLoadingIcon();
-    console.log(weatherData);
-    renderWeatherDivs();
-    injectData(weatherData);
-    animateWeatherDivCreation();
+    if (City === '') {
+      alert('Please add a City to your search');
+    } else {
+      document.getElementById('headerInputBox').value = '';
+      weatherDivRemoval();
+      drawLoadingIcon();
+      weatherData = await weatherDataFetch(City);
+      removeLoadingIcon();
+      console.log(weatherData);
+      renderWeatherDivs();
+      injectData(weatherData);
+      animateWeatherDivCreation();
+    }
   }
   headerInputDiv.appendChild(headerInputSubmit);
 
