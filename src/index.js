@@ -3,6 +3,7 @@ import { moment } from "moment-es6";
 import './style.css';
 
 let weatherData;
+let localTimezoneOffset;
 let apiKey = 'eae1491e89f960425a0971c74103081f'
 
 function initializeBaseDivs() {
@@ -40,7 +41,7 @@ async function userLocationWeatherData(position) {
 }
 
 async function weatherDataFetch(City) {
-  const response1 = await fetch('http://api.openweathermap.org/geo/1.0/direct?q=' + City + '&limit=5&appid=' + apiKey, { mode: 'cors' });
+  const response1 = await fetch('https://api.openweathermap.org/geo/1.0/direct?q=' + City + '&limit=5&appid=' + apiKey, { mode: 'cors' });
   const geoData = await response1.json();
   const response2 = await fetch('https://api.openweathermap.org/data/3.0/onecall?lat=' + geoData[0].lat + '&lon=' + geoData[0].lon + '&appid=eae1491e89f960425a0971c74103081f', { mode: 'cors' });
   const data = await response2.json();
@@ -62,6 +63,7 @@ function weatherDataGeolocation() {
       removeLoadingIcon();
       console.log(weatherData);
       renderWeatherDivs();
+      localTimezoneOffset = weatherData.timezone_offset;
       injectData(weatherData);
       animateWeatherDivCreation();
     },
@@ -91,7 +93,7 @@ function drawHeader() {
 
   let headerInputBox = document.createElement('input');
   headerInputBox.setAttribute('id', 'headerInputBox');
-  headerInputBox.placeholder = 'Search for a location';
+  headerInputBox.placeholder = 'Search for a City';
   headerInputDiv.appendChild(headerInputBox);
 
   let headerInputSubmit = document.createElement('button');
@@ -476,11 +478,11 @@ function injectData(weatherData) {
 
   /* Extra Info Weather Data Injection */
   let sunriseDiv = document.getElementById('weatherExtraInfoSunrise');
-  let sunriseTime = new Date((weatherData.current.sunrise) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
+  let sunriseTime = new Date((weatherData.current.sunrise + weatherData.timezone_offset - localTimezoneOffset) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
   sunriseDiv.innerHTML = sunriseTime;
 
   let sunsetDiv = document.getElementById('weatherExtraInfoSunset');
-  let sunsetTime = new Date((weatherData.current.sunset) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
+  let sunsetTime = new Date((weatherData.current.sunset + weatherData.timezone_offset - localTimezoneOffset) * 1000).toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
   sunsetDiv.innerHTML = sunsetTime;
 
   let humidityDiv = document.getElementById('weatherExtraInfoHumidity');

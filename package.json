@@ -7,7 +7,9 @@
     "test": "echo \"Error: no test specif ied\" && exit 1",
     "start": "webpack serve --open",
     "server": "node server.js",
-    "build": "webpack"
+    "build": "webpack  --mode=development",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "repository": {
     "type": "git",
